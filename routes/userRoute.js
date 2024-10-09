@@ -1,14 +1,17 @@
 import express from "express";
-import { fetchUserprofile, loginUser, signupUser } from "../controllers/userController.js";
+import { deleteUserprofile, editUserprofile, fetchUserprofile, loginUser, logoutUser, signupUser } from "../controllers/userController.js";
+import { authUser } from "../middlewares/authenticateUser.js";
+import { upload }from "../middlewares/multer.js";
 const router = express.Router();
 
 
 router.post('/signup', signupUser)
 router.post('/login', loginUser)
-router.get('/profile', fetchUserprofile)
-router.put('/editprofile', (req,res,next)=>{})
-router.post('/logout', (req,res,next)=>{})
-router.delete('/deleteprofile', (req,res,next)=>{})
+router.get('/profile',authUser, fetchUserprofile)
+router.put('/editprofile/:userId',authUser,upload.single('userpic') ,editUserprofile)
+router.delete('/deleteprofile/:userId', authUser, deleteUserprofile)
+router.post('/logout',authUser, logoutUser)
+
 
 
 export { router as userRouter }

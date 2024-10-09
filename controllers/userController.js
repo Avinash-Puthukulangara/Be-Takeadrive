@@ -1,6 +1,7 @@
 import User  from '../models/userModel.js'
 import bcrypt from 'bcrypt'
-import { generatetoken } from '../utils/token.js'
+import { generateToken } from '../utils/token.js'
+import { imageHandler } from '../utils/imagehandler.js';
 
 export const signupUser = async (req,res,next)=>{
     try {
@@ -26,17 +27,18 @@ export const signupUser = async (req,res,next)=>{
             password: hashedPassword,
             age,
             phone,
-            address
+            address,
+            userpic
         })
 
         const savedUser = await newUser.save()
         console.log(savedUser)
 
         if(savedUser){
-            const token = await generatetoken(savedUser._id)
+            const token = await generateToken(savedUser._id)
 
             res.cookie("token",token)
-            return res.status(200).json({message: "User saved successfully", savedUser})
+            return res.status(200).json({success:"true",message: "User saved successfully"})
         }
         return res.status(400).json({error: "Error in User Saving"})
 
@@ -64,10 +66,10 @@ export const loginUser = async (req,res,next)=>{
             return res.status(400).json({message:"Password doest not match"})
         }
 
-        const token = generatetoken(userExist._id)
+        const token = generateToken(userExist._id)
         res.cookie("token", token)
         console.log(userExist)
-        return res.status(200).json({message:"User logged in Successfully"})
+        return res.status(200).json({success:"true",message:"User logged in Successfully"})
     } catch (error) {
         console.log(error)
         res.status(error.status || 500).json({error: error.message || 'Internal Server Error in Login'})
@@ -77,13 +79,70 @@ export const loginUser = async (req,res,next)=>{
 export const fetchUserprofile = async (req,res,next)=>{
     try {
         
-
-
-
-
+        const {user} = req
+        const userData = await User.findById(user.id).select('-password')
+        res.status(200).json({message:"fetched data", userData})
 
     } catch (error) {
         console.log(error)
         res.status(error.status || 500).json({error: error.message || 'Internal Server Error in fetching user profile'})
+    }
+}
+
+export const editUserprofile = async (req,res,next)=>{
+    try {
+        const {userId} = req.params
+        const { name,email,password,age,phone,address,userpic } = req.body;
+        let imageUrl;
+
+        const userExist = await User.findById(userId);
+        console.log(userExist)
+        if(!userExist){
+           return res.status(404).json({message:"User not found"})
+        }
+
+        console.log("image====", req.file);
+
+        if (req.file) {
+            imageUrl = await imageHandler(req.file.path)
+        }
+
+        console.log(imageUrl,'====imageUrl');
+
+        const userUpdated = await User.findByIdAndUpdate(userId,{ name,email,password,age,phone,address,userpic:imageUrl },{new:true})
+
+        res.json({ message: "User data updated successfully", data: userUpdated });
+    } catch (error) {
+        console.log(error)
+        res.status(error.status || 500).json({error: error.message || 'Internal Server Error in editing user profile'})
+    }
+
+}
+
+export const logoutUser = async (req,res,next)=>{
+    try {
+        
+        res.clearCookie('token')
+        res.status(200).json({message:"User logged out Suuccessfully"})
+    } catch (error) {
+        console.log(error)
+        res.status(error.status || 500).json({error: error.message || 'Internal Server Error in fetching user profile'})
+    }
+}
+
+export const deleteUserprofile = async (req,res,next)=>{
+    try {
+        const {userId} = req.params
+
+        const userExist = await User.findByIdAndDelete(userId);
+        if(!userExist){
+            return res.status(404).json({message:"User not found"})
+        }
+
+        res.status(200).json({ message: "User deleted successfully" });
+    } catch (error) {
+        console.log(error)
+        res.status(error.status || 500).json({error: error.message || 'Internal Server Error'})
+
     }
 }

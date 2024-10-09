@@ -1,17 +1,17 @@
 import express from "express";
+import { deleteDealerprofile, editDealerprofile, fetchDealerprofile, loginDealer, logoutDealer, signupDealer } from "../controllers/dealerController.js";
+import { authDealer } from "../middlewares/authenticateDealer.js";
+import { upload } from "../middlewares/multer.js";
 const router = express.Router();
 
 
-router.post('/signup', (req,res,next)=>{})
+router.post('/signup', signupDealer)
+router.post('/login', loginDealer)
+router.get('/profile',authDealer, fetchDealerprofile)
+router.put('/editprofile/:dealerId', authDealer, upload.single('dealerpic'), editDealerprofile)
+router.post('/logout',authDealer, logoutDealer)
+router.delete('/deletedealer/:dealerId',authDealer, deleteDealerprofile)
 
-router.post('/login', (req,res,next)=>{})
 
-router.post('/logout', (req,res,next)=>{})
-
-router.get('/profile', (req,res,next)=>{})
-
-router.put('/editprofile', (req,res,next)=>{})
-
-router.delete('/deleteprofile', (req,res,next)=>{})
 
 export { router as dealerRouter }
