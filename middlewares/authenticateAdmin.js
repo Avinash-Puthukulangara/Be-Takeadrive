@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken'
 
-export const authDealer = async (req,res,next)=>{
+export const authAdmin = async (req,res,next)=>{
     try {
         const { token } = req.cookies
         if(!token){
@@ -13,8 +13,8 @@ export const authDealer = async (req,res,next)=>{
         }
         
         
-        if(tokenVerified.role!=='dealer'){
-            return res.status(402).json({message:"Not authorised"})
+        if(tokenVerified.role!=='admin'){
+            return res.status(402).json({message:"Not authorised as admin"})
         }
         req.user=tokenVerified
 

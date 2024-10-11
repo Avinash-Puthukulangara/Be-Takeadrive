@@ -11,7 +11,7 @@ export const authUser = async (req,res,next)=>{
         if(!tokenVerified){
             return res.status(402).json({message:"User token not verified"})
         }
-        console.log(tokenVerified,'---verified token---')
+        // console.log(tokenVerified,'---verified token---')
         req.user=tokenVerified
 
         next()

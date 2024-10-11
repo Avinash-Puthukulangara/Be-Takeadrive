@@ -1,8 +1,9 @@
 import Dealer from '../models/dealerModel.js';
 import bcrypt from 'bcrypt'
-import { generateToken } from '../utils/token.js'
+import { adminToken } from '../utils/token.js'
 import { cloudinaryInstance } from '../config/cloudinary.js';
 
+//dealer routes
 export const signupDealer = async (req,res,next)=>{
     try {
         const { name,email,password,phone,dealerpic } = req.body;
@@ -35,18 +36,34 @@ export const signupDealer = async (req,res,next)=>{
             email,
             password: hashedPassword,
             phone,
-            role:'dealer',
+            role:'admin',
             dealerpic: dealerpicresult,
             dealerpicPublicId
         })
 
         const savedDealer = await newDealer.save()
 
-        if(savedDealer){
-            const token = await generateToken(savedDealer._id,'dealer')
-
-            res.cookie("token",token)
-            return res.status(200).json({success:"true",message: "Dealer signed up successfully"})
+        if (savedDealer) {
+            let token;
+            if (savedDealer.role === 'dealer') {
+                token = adminToken(savedDealer._id, 'dealer');
+            } else if (savedDealer.role === 'admin') {
+                token = adminToken(savedDealer._id, 'admin');
+            }
+    
+            // Set the token in a cookie
+            res.cookie("token", token, {
+                maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
+                httpOnly: true,
+                sameSite: "none",
+                secure: process.env.NODE_ENV !== "development",
+            });
+    
+            // Return appropriate response based on role
+            return res.status(200).json({
+                success: "true",
+                message: `${savedDealer.role.charAt(0).toUpperCase() + savedDealer.role.slice(1)} signed up successfully`
+            });
         }
         return res.status(400).json({success:"false",error: "Error in Dealer Saving"})
 
@@ -76,7 +93,7 @@ export const loginDealer = async (req,res,next)=>{
             return res.status(400).json({message:"Password doest not match"})
         }
 
-        const token = generateToken(dealerExist._id,'dealer')
+        const token = adminToken(dealerExist._id,'dealer')
         res.cookie("token", token)
 
         return res.status(200).json({success:"true",message:"Dealer logged in Successfully"})
@@ -150,7 +167,7 @@ export const logoutDealer = async (req,res,next)=>{
     try {
         
         res.clearCookie('token')
-        res.status(200).json({success:"true",message:"Dealer logged out Suuccessfully"})
+        res.status(200).json({success:"true",message:"Dealer logged out Successfully"})
     } catch (error) {
         console.log(error)
         res.status(error.status || 500).json({success:"false",error: error.message || 'Internal Server Error'})
@@ -177,5 +194,17 @@ export const deleteDealer = async (req,res,next)=>{
         console.log(error)
         res.status(error.status || 500).json({success:"false",error: error.message || 'Internal Server Error'})
 
+    }
+}
+
+
+//admin routes
+export const getallDealers = async (req, res, next)=>{
+    try {
+        const allDealers = await Dealer.find({role : 'dealer'})
+        return res.status(200).json({success:"true", message:"Fetched all dealers" , data: allDealers})
+    } catch (error) {
+        console.log(error)
+        res.status(error.status || 500).json({success:"false",error: error.message || 'Internal Server Error'})
     }
 }
