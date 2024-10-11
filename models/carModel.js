@@ -9,7 +9,7 @@ const carSchema = new mongoose.Schema({
     model: {
         type: String,
         required: true,
-        enum: ['suv','sedan','hatchback']
+        enum: ['suv','sedan','hatchback','mpv']
     },
     carnumber:{
         type: String,
@@ -30,9 +30,13 @@ const carSchema = new mongoose.Schema({
     seatcapacity: {
         type: Number,
         required: true,
-        enum: ['5','7']
+        enum: [5,6,7]
     },
-    image: {
+    carpic: {
+        type: String,
+        required: true,
+    },
+    carpicPublicId: {
         type: String,
         required: true,
     },
