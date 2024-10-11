@@ -13,7 +13,7 @@ export const createCar = async (req,res,next)=> {
       
 
           if (!req.file) {
-            return res.status(400).json({ success: false, message: "No file uploaded" });
+            return res.status(400).json({ success: "false", message: "No file uploaded" });
           }
       
           const result = await cloudinaryInstance.uploader.upload(req.file.path, {
@@ -21,6 +21,7 @@ export const createCar = async (req,res,next)=> {
             tags: "image",
             resource_type: "auto",
           });
+          
           const carpic = result.secure_url;
           const carpicPublicId = result.public_id;
       

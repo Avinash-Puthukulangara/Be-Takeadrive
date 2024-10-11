@@ -17,8 +17,18 @@ export const signupDealer = async (req,res,next)=>{
             return res.status(400).json({error: 'Dealer already exists'})
         }
 
+        const result = await cloudinaryInstance.uploader.upload('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlYIVXkXhJL1LoxjfuT10hVwlYmcJoQ9CD0A&s', {
+            folder: "carrental dealers",
+            tags: "image",
+            resource_type: "auto",
+        })
+
         const salt = await bcrypt.genSalt(10)
         const hashedPassword = await bcrypt.hash(password, salt)
+
+        const dealerpicresult = result.secure_url
+        const dealerpicPublicId = result.public_id
+
 
         const newDealer = new Dealer({
             name,
@@ -26,7 +36,8 @@ export const signupDealer = async (req,res,next)=>{
             password: hashedPassword,
             phone,
             role:'dealer',
-            dealerpic
+            dealerpic: dealerpicresult,
+            dealerpicPublicId
         })
 
         const savedDealer = await newDealer.save()
@@ -102,17 +113,29 @@ export const editDealer = async (req,res,next)=>{
         }
 
         let dealerpicnew = dealerExist.dealerpic;
+        let dealerpicPublicId = dealerExist.dealerpicPublicId;
 
         if(req.file){
+            if (dealerpicPublicId) {
+                await cloudinaryInstance.uploader.destroy(dealerpicPublicId);
+            }
             const result = await cloudinaryInstance.uploader.upload(req.file.path, {
                 folder: "carrental dealers",
                 tags: "image",
                 resource_type: "auto"
               });
               dealerpicnew = result.secure_url;
+              dealerpicPublicId = result.public_id;
             }
 
-        const dealerUpdated = await Dealer.findByIdAndUpdate(dealerId,{ name,email,password,phone,dealerpic: dealerpicnew},{new:true}).select('-password')
+        const dealerUpdated = await Dealer.findByIdAndUpdate(dealerId,{ 
+            name,
+            email,
+            password,
+            phone,
+            dealerpic: dealerpicnew,
+            dealerpicPublicId: dealerpicPublicId
+        },{new:true}).select('-password')
 
         res.json({ success:"true",message: "Dealer data updated successfully", data: dealerUpdated });
 
@@ -137,10 +160,15 @@ export const logoutDealer = async (req,res,next)=>{
 export const deleteDealer = async (req,res,next)=>{
     try {
         const {dealerId} = req.params
+        const dealerExist = await Dealer.findById(dealerId);
 
-        const dealerExist = await Dealer.findByIdAndDelete(dealerId);
         if(!dealerExist){
             return res.status(404).json({message:"Dealer not found"})
+        }
+        await Dealer.findByIdAndDelete(dealerId)
+
+        if (dealerExist.dealerpicPublicId) {
+            await cloudinaryInstance.uploader.destroy(dealerExist.dealerpicPublicId);
         }
 
         return res.status(200).json({success:"true",message:"Dealer deleted successfully"})

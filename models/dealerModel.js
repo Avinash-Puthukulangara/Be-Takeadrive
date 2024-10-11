@@ -31,6 +31,10 @@ const dealerSchema = new mongoose.Schema({
     dealerpic: {
         type: String,
         default: 'https://freesvg.org/img/abstract-user-flat-4.png'
+    },
+    dealerpicPublicId: {
+        type: String,
+        required: true
     }, 
     cars: [{ type: mongoose.Types.ObjectId, ref:'Car'}]
 },

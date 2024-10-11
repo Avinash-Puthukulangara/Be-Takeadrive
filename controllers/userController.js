@@ -17,8 +17,17 @@ export const signupUser = async (req,res,next)=>{
             return res.status(400).json({error: 'User already exists'})
         }
 
+        const result = await cloudinaryInstance.uploader.upload('https://static.thenounproject.com/png/363633-200.png', {
+            folder: "carrental users",
+            tags: "image",
+            resource_type: "auto",
+        })
+        
         const salt = await bcrypt.genSalt(10)
         const hashedPassword = await bcrypt.hash(password, salt)
+
+        const userpicresult = result.secure_url
+        const userpicPublicId = result.public_id
 
         const newUser = new User({
             name,
@@ -27,7 +36,8 @@ export const signupUser = async (req,res,next)=>{
             age,
             phone,
             address,
-            userpic
+            userpic: userpicresult,
+            userpicPublicId
         })
 
         const savedUser = await newUser.save()
@@ -100,17 +110,31 @@ export const editUser = async (req,res,next)=>{
         }
 
         let userpicnew = userExist.userpic;
+        let userpicPublicId = userExist.userpicPublicId
 
         if(req.file){
+            if (userpicPublicId) {
+                await cloudinaryInstance.uploader.destroy(userpicPublicId);
+            }
         const result = await cloudinaryInstance.uploader.upload(req.file.path, {
             folder: "carrental users",
             tags: "image",
             resource_type: "auto"
           });
           userpicnew = result.secure_url;
+          userpicPublicId = result.public_id;
         }
         
-        const userUpdated = await User.findByIdAndUpdate(userId,{ name,email,password,age,phone,address,userpic: userpicnew},{new:true}).select('-password')
+        const userUpdated = await User.findByIdAndUpdate(userId,{ 
+            name,
+            email,
+            password,
+            age,
+            phone,
+            address,
+            userpic: userpicnew,
+            userpicPublicId: userpicPublicId
+        },{new:true}).select('-password')
         
         res.json({ success:"true",message: "User data updated successfully", data: userUpdated });
 
@@ -136,14 +160,22 @@ export const logoutUser = async (req,res,next)=>{
 export const deleteUser = async (req,res,next)=>{
     try {
         const {userId} = req.params
+        const userExist = await User.findById(userId);
 
-        const userExist = await User.findByIdAndDelete(userId);
         if(!userExist){
             return res.status(404).json({message:"User not found"})
         }
 
+        await User.findByIdAndDelete(userId)
+
+        if (userExist.userpicPublicId) {
+            await cloudinaryInstance.uploader.destroy(userExist.userpicPublicId);
+        }
+
         res.status(200).json({ success:"true",message: "User deleted successfully" });
+
     } catch (error) {
+
         console.log(error)
         res.status(error.status || 500).json({success:"false",error: error.message || 'Internal Server Error'})
 
