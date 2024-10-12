@@ -26,7 +26,7 @@ const dealerSchema = new mongoose.Schema({
     role: {
         type: String,
         required: true,
-        enum: ['dealer','admin']
+        default: 'dealer'
     },
     dealerpic: {
         type: String,

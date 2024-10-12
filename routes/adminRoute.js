@@ -1,11 +1,12 @@
 import express from 'express';
 import { authAdmin } from '../middlewares/authenticateAdmin.js';
-import { loginAdmin } from '../controllers/adminController.js';
+import { loginAdmin, logoutAdmin } from '../controllers/adminController.js';
 import { getallDealers } from '../controllers/dealerController.js';
 const router = express.Router();
 
 
-router.post('/loginadmin', authAdmin, loginAdmin);
+router.post('/loginadmin', loginAdmin);
+router.post('/logoutadmin', authAdmin, logoutAdmin)
 
 router.get('/alldealers', authAdmin, getallDealers);
 

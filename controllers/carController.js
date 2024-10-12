@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Car from "../models/carModel.js";
 import { cloudinaryInstance } from "../config/cloudinary.js";
+import Dealer from "../models/dealerModel.js";
 
 
 export const createCar = async (req,res,next)=> {
@@ -29,6 +30,8 @@ export const createCar = async (req,res,next)=> {
           if (carExist) {
             return res.status(400).json({ error: 'Car already exists' });
           }
+
+          const dealerId = req.user.id;
       
           const newCar = new Car({
             name,
@@ -39,16 +42,21 @@ export const createCar = async (req,res,next)=> {
             seatcapacity,
             rent,
             carpic,
-            carpicPublicId
+            carpicPublicId,
+            dealer: dealerId
           });
       
 
           const savedCar = await newCar.save();
       
           if (savedCar) {
-            return res.status(200).json({ success: "true", message: "Car saved successfully"});
+            await Dealer.findByIdAndUpdate(dealerId, {
+              $push: { cars: savedCar._id } 
+            });
+            return res.status(200).json({ success: "true", message: "Car saved successfully", car: savedCar });
+
           }
-      
+
           return res.status(400).json({ success: "false", error: "Error in saving car" });
       
         } catch (error) {
@@ -93,6 +101,13 @@ export const updateCar = async (req, res, next) => {
            return res.status(404).json({message:"Car not found"})
         }
 
+        const userId = req.user.id; 
+        const userRole = req.user.role; 
+
+        if (userRole !== 'admin' && carExist.dealer.toString() !== userId) {
+            return res.status(403).json({ message: "You are not authorized to update this car" });
+        }
+
         let carpicnew = carExist.carpic
         let carpicPublicId = carExist.carpicPublicId;
 
@@ -130,21 +145,34 @@ export const updateCar = async (req, res, next) => {
 
 export const deleteCar = async (req, res, next) => {
     try {
-        const {carId} = req.params;
-        const carDetails = await Car.findById(carId)
-
-        if(!carDetails){
-            return res.status(404).json({message:"Car not found"})
+        const { carId } = req.params;
+        const carDetails = await Car.findById(carId);
+        
+        if (!carDetails) {
+            return res.status(404).json({ message: "Car not found" });
         }
-
+        
         const carpicPublicId = carDetails.carpicPublicId;
 
-        await Car.findByIdAndDelete(carId);
-
-        if (carpicPublicId) {
-             await cloudinaryInstance.uploader.destroy(carpicPublicId);
+        const userId = req.user.id;
+        const userRole = req.user.role;
+        const dealerId = carDetails.dealer;
+        
+        if (userRole !== 'admin' && dealerId.toString() !== userId) {
+            return res.status(403).json({ message: "You are not authorized to delete this car" });
         }
-        return res.status(200).json({ success:"true",message: "Car deleted successfully" });
+        
+        await Car.findByIdAndDelete(carId);
+        
+        if (carpicPublicId) {
+            await cloudinaryInstance.uploader.destroy(carpicPublicId);
+        }
+        
+        await Dealer.findByIdAndUpdate(dealerId, {
+            $pull: { cars: carId }
+        });
+        
+        return res.status(200).json({ success: "true", message: "Car deleted successfully" });
 
     } catch (error) {
         console.log(error);

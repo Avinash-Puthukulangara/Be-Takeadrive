@@ -36,7 +36,7 @@ export const signupDealer = async (req,res,next)=>{
             email,
             password: hashedPassword,
             phone,
-            role:'admin',
+            role:'dealer',
             dealerpic: dealerpicresult,
             dealerpicPublicId
         })
@@ -51,7 +51,6 @@ export const signupDealer = async (req,res,next)=>{
                 token = adminToken(savedDealer._id, 'admin');
             }
     
-            // Set the token in a cookie
             res.cookie("token", token, {
                 maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
                 httpOnly: true,
@@ -59,7 +58,6 @@ export const signupDealer = async (req,res,next)=>{
                 secure: process.env.NODE_ENV !== "development",
             });
     
-            // Return appropriate response based on role
             return res.status(200).json({
                 success: "true",
                 message: `${savedDealer.role.charAt(0).toUpperCase() + savedDealer.role.slice(1)} signed up successfully`
@@ -201,7 +199,7 @@ export const deleteDealer = async (req,res,next)=>{
 //admin routes
 export const getallDealers = async (req, res, next)=>{
     try {
-        const allDealers = await Dealer.find({role : 'dealer'})
+        const allDealers = await Dealer.find({role : 'dealer'}).select('-password')
         return res.status(200).json({success:"true", message:"Fetched all dealers" , data: allDealers})
     } catch (error) {
         console.log(error)

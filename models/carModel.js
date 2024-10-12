@@ -44,7 +44,7 @@ const carSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-    dealer: [{type: mongoose.Types.ObjectId, ref:"Dealer"}],
+    dealer: {type: mongoose.Types.ObjectId, ref:"Dealer"},
 },
     { timestamps:true }
 )

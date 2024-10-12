@@ -13,7 +13,7 @@ export const authDealer = async (req,res,next)=>{
         }
         
         
-        if(tokenVerified.role!=='dealer'){
+        if(tokenVerified.role!=='dealer' && tokenVerified.role!== 'admin'){
             return res.status(402).json({message:"Not authorised"})
         }
         req.user=tokenVerified
