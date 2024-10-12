@@ -35,6 +35,14 @@ const dealerSchema = new mongoose.Schema({
     dealerpicPublicId: {
         type: String,
         required: true
+    },
+    carsanction: {
+        type: Boolean,
+        default: false
+    },
+    carstock: {
+        type: Number,
+        default: 0
     }, 
     cars: [{ type: mongoose.Types.ObjectId, ref:'Car'}]
 },

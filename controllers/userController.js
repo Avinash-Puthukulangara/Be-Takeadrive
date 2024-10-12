@@ -3,6 +3,8 @@ import bcrypt from 'bcrypt'
 import { generateToken } from '../utils/token.js'
 import { cloudinaryInstance } from '../config/cloudinary.js';
 
+
+//user controls//
 export const signupUser = async (req,res,next)=>{
     try {
         const { name,email,password,age,phone,address,userpic } = req.body;
@@ -179,5 +181,19 @@ export const deleteUser = async (req,res,next)=>{
         console.log(error)
         res.status(error.status || 500).json({success:"false",error: error.message || 'Internal Server Error'})
 
+    }
+}
+
+
+//admin controls//
+export const getallUsers = async (req, res, next)=>{
+    try {
+        const allUsers = await User.find().select('-password')
+        return res.status(200).json({success:"true", message:"Fetched all Users" , data: allUsers})
+
+    } catch (error) {
+
+        console.log(error)
+        res.status(error.status || 500).json({success:"false",error: error.message || 'Internal Server Error'})
     }
 }

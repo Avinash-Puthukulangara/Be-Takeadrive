@@ -44,6 +44,11 @@ const carSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    carstatus: {
+        type: String,
+        enum: [ 'approved', 'pending', 'rejected'],
+        default: 'pending'
+    },
     dealer: {type: mongoose.Types.ObjectId, ref:"Dealer"},
 },
     { timestamps:true }

@@ -1,6 +1,7 @@
 import Dealer from '../models/dealerModel.js';
 import bcrypt from 'bcrypt'
 import { adminToken } from '../utils/token.js'
+import Car from '../models/carModel.js';
 
 
 export const loginAdmin = async (req,res,next)=>{
@@ -63,4 +64,64 @@ export const logoutAdmin = async (req,res,next)=>{
         console.log(error)
         res.status(error.status || 500).json({success:"false",error: error.message || 'Internal Server Error'})
     }
+}
+
+
+
+export const carApproval = async (req,res,next)=>{
+    try {
+        const { carId } = req.params;
+
+        const car = await Car.findById(carId);
+        if (!car || car.carstatus !== 'pending') {
+            return res.status(404).json({success:"true",message: 'Already approved car / Car not found for approval'});
+        }
+
+        car.carstatus = 'approved';
+        await car.save();
+
+        return res.status(200).json({success: true, message: 'Car approved successfully'})
+
+    } catch (error) {
+        console.log(error)
+        res.status(error.status || 500).json({success:"false",error: error.message || 'Internal Server Error'})
+    }
+}
+
+export const carPending = async (req,res,next)=>{
+    try {
+
+        const pendingCars = await Car.find({ carstatus: 'pending' });
+
+        if (pendingCars.length === 0) {
+            return res.status(200).json({ message: "No pending cars" });
+        }
+
+        return res.status(200).json({ success: true, message: "Pending cars list", cars: pendingCars });
+
+    } catch (error) {
+
+        console.log(error)
+        res.status(error.status || 500).json({success:"false",error: error.message || 'Internal Server Error'})
+    }
+}
+
+export const carRejection = async (req,res,next)=>{
+  try{
+    const { carId } = req.params;
+    const car = await Car.findById(carId);
+
+    if (!car || car.carstatus !== 'pending' && car.carstatus !== 'approved') {
+        return res.status(404).json({success:"true",message: 'Car not found. --rejection--'});
+    }
+
+    car.carstatus = 'rejected';
+    await car.save();
+
+    return res.status(200).json({success: true, message: 'Car rejected for some reason'})
+
+  } catch (error) {
+    console.log(error)
+    res.status(error.status || 500).json({success:"false",error: error.message || 'Internal Server Error'})
+  }
 }

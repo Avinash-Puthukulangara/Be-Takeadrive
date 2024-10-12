@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt'
 import { adminToken } from '../utils/token.js'
 import { cloudinaryInstance } from '../config/cloudinary.js';
 
-//dealer routes
+//dealer controls//
 export const signupDealer = async (req,res,next)=>{
     try {
         const { name,email,password,phone,dealerpic } = req.body;
@@ -196,7 +196,7 @@ export const deleteDealer = async (req,res,next)=>{
 }
 
 
-//admin routes
+//admin controls//
 export const getallDealers = async (req, res, next)=>{
     try {
         const allDealers = await Dealer.find({role : 'dealer'}).select('-password')

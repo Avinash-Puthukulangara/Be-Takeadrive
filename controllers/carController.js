@@ -32,6 +32,9 @@ export const createCar = async (req,res,next)=> {
           }
 
           const dealerId = req.user.id;
+          const dealer = await Dealer.findById(dealerId);
+
+          const needSanction = !dealer.carsanction
       
           const newCar = new Car({
             name,
@@ -43,21 +46,30 @@ export const createCar = async (req,res,next)=> {
             rent,
             carpic,
             carpicPublicId,
-            dealer: dealerId
+            dealer: dealerId,
+            carstatus: needSanction ? 'pending' : 'approved'
           });
       
-
           const savedCar = await newCar.save();
       
           if (savedCar) {
             await Dealer.findByIdAndUpdate(dealerId, {
-              $push: { cars: savedCar._id } 
-            });
-            return res.status(200).json({ success: "true", message: "Car saved successfully", car: savedCar });
-
+              $push: { cars: savedCar._id }});
           }
 
-          return res.status(400).json({ success: "false", error: "Error in saving car" });
+          dealer.carstock += 1
+
+          if(dealer.carstock >= 2){
+            dealer.carsanction = true
+          }
+
+          await dealer.save();
+
+          if(needSanction){
+            res.status(200).json({ success: "true", message: "Car saved successfully, but dealer needs sanction", car: savedCar });
+          }else{
+            res.status(200).json({ success: "true", message: "Car saved successfully", car: savedCar });
+          }
       
         } catch (error) {
           console.log(error);
@@ -67,7 +79,7 @@ export const createCar = async (req,res,next)=> {
       
 export const getAllCars = async (req,res,next)=>{
     try {
-        const carsList = await Car.find();
+        const carsList = await Car.find({carstatus: 'approved'});
 
         return res.json({ success:"true",message: "Cars list fetched", data: carsList });
     } catch (error) {
@@ -146,23 +158,27 @@ export const updateCar = async (req, res, next) => {
 export const deleteCar = async (req, res, next) => {
     try {
         const { carId } = req.params;
-        const carDetails = await Car.findById(carId);
+        const car = await Car.findById(carId);
         
-        if (!carDetails) {
+        if (!car) {
             return res.status(404).json({ message: "Car not found" });
         }
         
-        const carpicPublicId = carDetails.carpicPublicId;
+        const carpicPublicId = car.carpicPublicId;
 
         const userId = req.user.id;
         const userRole = req.user.role;
-        const dealerId = carDetails.dealer;
+        const dealerId = car.dealer;
         
         if (userRole !== 'admin' && dealerId.toString() !== userId) {
             return res.status(403).json({ message: "You are not authorized to delete this car" });
         }
         
         await Car.findByIdAndDelete(carId);
+
+        await car.remove();
+        dealerId.carstock = Math.max(dealerId.carstock - 1, 0);
+        await dealerId.save();
         
         if (carpicPublicId) {
             await cloudinaryInstance.uploader.destroy(carpicPublicId);
