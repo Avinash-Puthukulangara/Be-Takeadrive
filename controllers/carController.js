@@ -12,19 +12,27 @@ export const createCar = async (req,res,next)=> {
             return res.status(400).json({ error: 'All fields are required' });
           }
       
-
-          if (!req.file) {
-            return res.status(400).json({ success: "false", message: "No file uploaded" });
-          }
-      
-          const result = await cloudinaryInstance.uploader.upload(req.file.path, {
-            folder: "carrental cars",
-            tags: "image",
-            resource_type: "auto",
-          });
-          
-          const carpic = result.secure_url;
-          const carpicPublicId = result.public_id;
+          if (!req.files || !req.files.carpic) {
+            return res.status(400).json({ success: "false", message: "No files uploaded" });
+        }
+        
+        if (req.files.carpic.length === 0) {
+            return res.status(400).json({ success: "false", message: "At least one car image is required" });
+        }
+        
+        const carpics = [];
+        const carpicPublicIds = [];
+        
+        for (const file of req.files.carpic) {
+            const result = await cloudinaryInstance.uploader.upload(file.path, {
+                folder: "carrental cars",
+                tags: "image",
+                resource_type: "auto",
+            });
+        
+            carpics.push(result.secure_url);
+            carpicPublicIds.push(result.public_id);
+        }
       
           const carExist = await Car.findOne({ carnumber });
           if (carExist) {
@@ -44,8 +52,8 @@ export const createCar = async (req,res,next)=> {
             transmissiontype,
             seatcapacity,
             rent,
-            carpic,
-            carpicPublicId,
+            carpic: carpics,
+            carpicPublicId: carpicPublicIds,
             dealer: dealerId,
             carstatus: needSanction ? 'pending' : 'approved'
           });
@@ -104,51 +112,65 @@ export const fetchCardetails = async (req, res, next) => {
 export const updateCar = async (req, res, next) => {
     try {
 
-        const {carId} = req.params;
-        const { name,model,carnumber,fueltype,transmissiontype,seatcapacity,carpic,rent } = req.body;
-        
-        const carExist = await Car.findById(carId);
+      const { carId } = req.params;
+      const { name, model, carnumber, fueltype, transmissiontype, seatcapacity, rent } = req.body;
+      
+      const carExist = await Car.findById(carId);
+      
+      if (!carExist) {
+          return res.status(404).json({ message: "Car not found" });
+      }
+      
+      const userId = req.user.id;
+      const userRole = req.user.role;
+      
+      if (userRole !== 'admin' && carExist.dealer.toString() !== userId) {
+          return res.status(403).json({ message: "You are not authorized to update this car" });
+      }
+      
+      const updateData = {};
+   
+      if (name) updateData.name = name;
+      if (model) updateData.model = model;
+      if (carnumber) updateData.carnumber = carnumber;
+      if (fueltype) updateData.fueltype = fueltype;
+      if (transmissiontype) updateData.transmissiontype = transmissiontype;
+      if (seatcapacity) updateData.seatcapacity = seatcapacity;
+      if (rent) updateData.rent = rent;
+      
 
-        if(!carExist){
-           return res.status(404).json({message:"Car not found"})
-        }
+      let carpicsnew = carExist.carpic || []; 
+      let carpicsPublicIds = carExist.carpicPublicId || [];
 
-        const userId = req.user.id; 
-        const userRole = req.user.role; 
+      if (req.files && req.files.carpic && req.files.carpic.length > 0) {
 
-        if (userRole !== 'admin' && carExist.dealer.toString() !== userId) {
-            return res.status(403).json({ message: "You are not authorized to update this car" });
-        }
+          if (carpicsPublicIds.length > 0) {
+              for (let publicId of carpicsPublicIds) {
+                  await cloudinaryInstance.uploader.destroy(publicId);
+              }
+          }
 
-        let carpicnew = carExist.carpic
-        let carpicPublicId = carExist.carpicPublicId;
+          carpicsnew = [];
+          carpicsPublicIds = [];
 
-        if(req.file){
-            if (carpicPublicId) {
-                await cloudinaryInstance.uploader.destroy(carpicPublicId);
-            }
-            const result = await cloudinaryInstance.uploader.upload(req.file.path, {
-                folder: "carrental cars",
-                tags: "car",
-                resource_type: "auto",
-            })
-            carpicnew = result.secure_url;
-            carpicPublicId = result.public_id
-        }
+          for (const file of req.files.carpic) {
+              const result = await cloudinaryInstance.uploader.upload(file.path, {
+                  folder: "carrental cars",
+                  tags: "car",
+                  resource_type: "auto",
+              });
+      
+              carpicsnew.push(result.secure_url);
+              carpicsPublicIds.push(result.public_id);
+          }
 
-        const carUpdated = await Car.findByIdAndUpdate(carId,{ 
-            name,
-            model,
-            carnumber,
-            fueltype,
-            transmissiontype,
-            seatcapacity,
-            carpic: carpicnew,
-            carpicPublicId: carpicPublicId,
-            rent
-        },{new:true})
-
-        res.json({ success:"true",message: "Car updated successfully", data: carUpdated });
+          updateData.carpic = carpicsnew;
+          updateData.carpicPublicId = carpicsPublicIds;
+      }
+      
+      const carUpdated = await Car.findByIdAndUpdate(carId, updateData, { new: true });
+      
+      res.json({ success: "true", message: "Car updated successfully", data: carUpdated });
     } catch (error) {
         console.log(error);
         res.status(error.statusCode || 500).json({success:"false",error: error.message || "Internal server error"});
@@ -157,38 +179,41 @@ export const updateCar = async (req, res, next) => {
 
 export const deleteCar = async (req, res, next) => {
     try {
-        const { carId } = req.params;
-        const car = await Car.findById(carId);
-        
-        if (!car) {
-            return res.status(404).json({ message: "Car not found" });
-        }
-        
-        const carpicPublicId = car.carpicPublicId;
-
-        const userId = req.user.id;
-        const userRole = req.user.role;
-        const dealerId = car.dealer;
-        
-        if (userRole !== 'admin' && dealerId.toString() !== userId) {
-            return res.status(403).json({ message: "You are not authorized to delete this car" });
-        }
-        
-        await Car.findByIdAndDelete(carId);
-
-        await car.remove();
-        dealerId.carstock = Math.max(dealerId.carstock - 1, 0);
-        await dealerId.save();
-        
-        if (carpicPublicId) {
-            await cloudinaryInstance.uploader.destroy(carpicPublicId);
-        }
-        
-        await Dealer.findByIdAndUpdate(dealerId, {
-            $pull: { cars: carId }
-        });
-        
-        return res.status(200).json({ success: "true", message: "Car deleted successfully" });
+      const { carId } = req.params;
+      const car = await Car.findById(carId);
+      
+      if (!car) {
+          return res.status(404).json({ message: "Car not found" });
+      }
+      
+      const userId = req.user.id;
+      const userRole = req.user.role;
+      const dealerId = car.dealer;
+      
+      if (userRole !== 'admin' && dealerId.toString() !== userId) {
+          return res.status(403).json({ message: "You are not authorized to delete this car" });
+      }
+      
+      const carpicPublicIds = car.carpicPublicId;
+      
+      if (carpicPublicIds && carpicPublicIds.length > 0) {
+          for (let publicId of carpicPublicIds) {
+              await cloudinaryInstance.uploader.destroy(publicId);
+          }
+      }
+      
+      await Car.findByIdAndDelete(carId);
+      
+      const dealer = await Dealer.findById(dealerId);
+      if (dealer) {
+          dealer.carstock = Math.max(dealer.carstock - 1, 0);
+          await Dealer.findByIdAndUpdate(dealerId, {
+              $pull: { cars: carId },
+              carstock: dealer.carstock
+          });
+      }
+      
+      return res.status(200).json({ success: "true", message: "Car deleted successfully" });      
 
     } catch (error) {
         console.log(error);

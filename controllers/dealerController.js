@@ -30,7 +30,6 @@ export const signupDealer = async (req,res,next)=>{
         const dealerpicresult = result.secure_url
         const dealerpicPublicId = result.public_id
 
-
         const newDealer = new Dealer({
             name,
             email,
@@ -127,32 +126,34 @@ export const editDealer = async (req,res,next)=>{
            return res.status(404).json({message:"Dealer not found"})
         }
 
+        const updateData = {};
+
+        if (name) updateData.name = name;
+        if (email) updateData.email = email;
+        if (phone) updateData.phone = phone; 
+
         let dealerpicnew = dealerExist.dealerpic;
         let dealerpicPublicId = dealerExist.dealerpicPublicId;
 
-        if(req.file){
+        if (req.files && req.files.dealerpic && req.files.dealerpic.length > 0) {
             if (dealerpicPublicId) {
                 await cloudinaryInstance.uploader.destroy(dealerpicPublicId);
             }
-            const result = await cloudinaryInstance.uploader.upload(req.file.path, {
+
+            const result = await cloudinaryInstance.uploader.upload(req.files.dealerpic[0].path, {
                 folder: "carrental dealers",
                 tags: "image",
                 resource_type: "auto"
-              });
-              dealerpicnew = result.secure_url;
-              dealerpicPublicId = result.public_id;
-            }
+            });
+            dealerpicnew = result.secure_url;
+            dealerpicPublicId = result.public_id;
+        }
 
-        const dealerUpdated = await Dealer.findByIdAndUpdate(dealerId,{ 
-            name,
-            email,
-            password,
-            phone,
-            dealerpic: dealerpicnew,
-            dealerpicPublicId: dealerpicPublicId
-        },{new:true}).select('-password')
+        updateData.dealerpic = dealerpicnew; 
+        updateData.dealerpicPublicId = dealerpicPublicId; 
 
-        res.json({ success:"true",message: "Dealer data updated successfully", data: dealerUpdated });
+        const dealerUpdated = await Dealer.findByIdAndUpdate(dealerId, updateData, { new: true }).select('-password');
+        return res.json({ success: "true", message: "Dealer data updated successfully", data: dealerUpdated });
 
     } catch (error) {
         console.log(error)

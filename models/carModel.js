@@ -33,11 +33,11 @@ const carSchema = new mongoose.Schema({
         enum: [5,6,7]
     },
     carpic: {
-        type: String,
+        type: [String],
         required: true,
     },
     carpicPublicId: {
-        type: String,
+        type: [String],
         required: true,
     },
     rent: {

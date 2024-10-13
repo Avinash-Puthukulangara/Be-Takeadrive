@@ -7,10 +7,13 @@ import { cloudinaryInstance } from '../config/cloudinary.js';
 //user controls//
 export const signupUser = async (req,res,next)=>{
     try {
-        const { name,email,password,age,phone,address,userpic } = req.body;
+        const { name,email,dob,password,phone } = req.body;
 
-        if(!name || !email || !password || !age || !phone || !address){
+        if(!name || !email || !password || !phone || !dob){
             return res.status(400).json({error: 'All fields are required'})
+        }
+        if (!req.files || !req.files.lcfrontpic || !req.files.lcbackpic) {
+            return res.status(400).json({ success: false, message: 'License front and back pictures are required' });
         }
 
         const userExist = await User.findOne({email})
@@ -19,27 +22,33 @@ export const signupUser = async (req,res,next)=>{
             return res.status(400).json({error: 'User already exists'})
         }
 
-        const result = await cloudinaryInstance.uploader.upload('https://static.thenounproject.com/png/363633-200.png', {
-            folder: "carrental users",
-            tags: "image",
-            resource_type: "auto",
-        })
-        
+        const uploadToCloudinary = async (filePath, folder, tags) => {
+            return await cloudinaryInstance.uploader.upload(filePath, {
+                folder: folder,
+                tags: tags,
+                resource_type: "auto",
+            });
+        };
+
+        const defaultUserPicResult = await uploadToCloudinary('https://static.thenounproject.com/png/363633-200.png', "carrental users", "image");
+        const licenseFrontResult = await uploadToCloudinary(req.files.lcfrontpic[0].path, "carrental users", "license image");
+        const licenseBackResult = await uploadToCloudinary(req.files.lcbackpic[0].path, "carrental users", "license image");
+
         const salt = await bcrypt.genSalt(10)
         const hashedPassword = await bcrypt.hash(password, salt)
-
-        const userpicresult = result.secure_url
-        const userpicPublicId = result.public_id
 
         const newUser = new User({
             name,
             email,
             password: hashedPassword,
-            age,
             phone,
-            address,
-            userpic: userpicresult,
-            userpicPublicId
+            dob,
+            userpic: defaultUserPicResult.secure_url,
+            userpicPublicId: defaultUserPicResult.public_id,
+            lcfrontpic: licenseFrontResult.secure_url,
+            licensefrontpicPublicId: licenseFrontResult.public_id,
+            lcbackpic: licenseBackResult.secure_url,
+            licensebackpicPublicId: licenseBackResult.public_id,
         })
 
         const savedUser = await newUser.save()
@@ -102,43 +111,44 @@ export const fetchUser = async (req,res,next)=>{
 
 export const editUser = async (req,res,next)=>{
     try {
-        const {userId} = req.params
-        const { name,email,password,age,phone,address,userpic } = req.body;
-
+        const { userId } = req.params
+        const { name, email, dob, phone, userpic } = req.body;
         const userExist = await User.findById(userId);
-
-        if(!userExist){
-           return res.status(404).json({message:"User not found"})
+        if (!userExist) {
+            return res.status(404).json({ message: "User not found" });
         }
 
-        let userpicnew = userExist.userpic;
-        let userpicPublicId = userExist.userpicPublicId
+        const updateData = {};
 
-        if(req.file){
+        if (name) updateData.name = name;
+        if (email) updateData.email = email;
+        if (phone) updateData.phone = phone; 
+        if (dob) updateData.dob = dob;
+
+        let userpicNew = userExist.userpic;
+        let userpicPublicId = userExist.userpicPublicId;
+
+        if (req.files && req.files.userpic && req.files.userpic.length > 0) {
             if (userpicPublicId) {
                 await cloudinaryInstance.uploader.destroy(userpicPublicId);
             }
-        const result = await cloudinaryInstance.uploader.upload(req.file.path, {
-            folder: "carrental users",
-            tags: "image",
-            resource_type: "auto"
-          });
-          userpicnew = result.secure_url;
-          userpicPublicId = result.public_id;
+
+            const result = await cloudinaryInstance.uploader.upload(req.files.userpic[0].path, {
+                folder: "carrental users",
+                tags: "image",
+                resource_type: "auto"
+            });
+            userpicNew = result.secure_url;
+            userpicPublicId = result.public_id;
         }
-        
-        const userUpdated = await User.findByIdAndUpdate(userId,{ 
-            name,
-            email,
-            password,
-            age,
-            phone,
-            address,
-            userpic: userpicnew,
-            userpicPublicId: userpicPublicId
-        },{new:true}).select('-password')
-        
-        res.json({ success:"true",message: "User data updated successfully", data: userUpdated });
+
+        updateData.userpic = userpicNew; 
+        updateData.userpicPublicId = userpicPublicId; 
+
+        const userUpdated = await User.findByIdAndUpdate(userId, updateData, { new: true }).select('-password');
+
+        return res.json({ success: "true", message: "User data updated successfully", data: userUpdated });
+
 
     } catch (error) {
         console.log(error)
@@ -170,8 +180,16 @@ export const deleteUser = async (req,res,next)=>{
 
         await User.findByIdAndDelete(userId)
 
-        if (userExist.userpicPublicId) {
-            await cloudinaryInstance.uploader.destroy(userExist.userpicPublicId);
+        const publicIdsToDelete = [
+            userExist.userpicPublicId,
+            userExist.licensefrontpicPublicId,
+            userExist.licensebackpicPublicId
+        ];
+        
+        for (const publicId of publicIdsToDelete) {
+            if (publicId) {
+                await cloudinaryInstance.uploader.destroy(publicId);
+            }
         }
 
         res.status(200).json({ success:"true",message: "User deleted successfully" });

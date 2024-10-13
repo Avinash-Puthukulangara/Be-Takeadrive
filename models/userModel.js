@@ -12,6 +12,10 @@ const userSchema = new mongoose.Schema({
         unique: true,
         // match: /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/
     },
+    dob: {
+        type: Date,
+        reqired: true
+    },
     password: {
         type: String,
         required: true,
@@ -23,12 +27,19 @@ const userSchema = new mongoose.Schema({
         unique: true,
         match: /^\d{10}$/
     },
-    age: {
-        type: Number,
-        required: true,
-        min: 18
+    lcfrontpic : {
+        type: String,
+        required: true
     },
-    address: {
+    licensefrontpicPublicId: {
+        type: String,
+        required: true
+    },
+    lcbackpic: {
+        type: String,
+        required: true
+    },
+    licensebackpicPublicId: {
         type: String,
         required: true
     },
