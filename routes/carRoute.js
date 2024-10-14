@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post('/createcar',authDealer,uploadMultiple, createCar)
 router.put('/updatecar/:carId',authDealer,uploadMultiple, updateCar)
-router.get('/allcars',authUser, getAllCars)
+router.post('/allcars',authUser, getAllCars)
 router.get('/cardetails/:carId',authUser, fetchCardetails)
 router.delete('/deletecar/:carId',authDealer, deleteCar)
 

@@ -1,6 +1,7 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-const bookingSchema =  mongoose.Schema({
+const bookingSchema = new mongoose.Schema({
+
     startdate: {
         type: Date,
         required: true
@@ -17,24 +18,40 @@ const bookingSchema =  mongoose.Schema({
         type: String,
         required: true
     },
-    distanceselected: {
+    totalcost: {
         type: Number,
-        enum: [75,100,170,250,350,470,550,700],
         required: true
     },
-    homedelivery: {
-        type: Boolean,
-        default: false
+    bookingstatus: {
+        type: String,
+        enum: ['pending', 'confirmed', 'cancelled'],
+        default: 'pending'
     },
-    userId : {
-        type: mongoose.Types.ObjectId,
-        ref: "User"
+    paymentstatus: {
+        type: String,
+        enum: ['pending', 'paid'],
+        default: 'pending'
     },
-    carId : {
-        type: mongoose.Types.ObjectId,
-        ref: "Car"
-    }
-})
+    selectedrange: {
+        type: String,
+        enum: [75,100,170,250,320,400,500,650],
+        default: 75
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    carId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Car',
+        required: true
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+}, {timestamps: true});
 
-const Booking = mongoose.model("Booking", bookingSchema);
+const Booking = mongoose.model('Booking', bookingSchema);
 export default Booking;

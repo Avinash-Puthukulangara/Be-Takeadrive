@@ -3,7 +3,6 @@ import Car from "../models/carModel.js";
 import { cloudinaryInstance } from "../config/cloudinary.js";
 import Dealer from "../models/dealerModel.js";
 
-
 export const createCar = async (req,res,next)=> {
         try {
           const { name, model, carnumber, fueltype, transmissiontype, seatcapacity, rent } = req.body;
@@ -74,7 +73,7 @@ export const createCar = async (req,res,next)=> {
           await dealer.save();
 
           if(needSanction){
-            res.status(200).json({ success: "true", message: "Car saved successfully, but dealer needs sanction", car: savedCar });
+            res.status(200).json({ success: "true", message: "Car saved successfully,needs sanction", car: savedCar });
           }else{
             res.status(200).json({ success: "true", message: "Car saved successfully", car: savedCar });
           }
@@ -87,9 +86,25 @@ export const createCar = async (req,res,next)=> {
       
 export const getAllCars = async (req,res,next)=>{
     try {
-        const carsList = await Car.find({carstatus: 'approved'});
+        const { startdate, enddate, pickuplocation, dropofflocation } = req.body;
+        const carsAvailable = await Car.find({carstatus: 'approved', pickuplocation: 'pickuplocation', dropofflocation: 'dropofflocation'});
 
-        return res.json({ success:"true",message: "Cars list fetched", data: carsList });
+        if (!startdate || !enddate || !pickuplocation || !dropofflocation) {
+            return res.status(400).json({ error: 'All fields are required' });
+        }
+
+        const homedelivery = 0;
+        let deliveryCharge = 0;  
+        if (pickuplocation == 'homedelivery' || dropofflocation == 'homedelivery') {
+            deliveryCharge = 300; 
+        }
+
+        return res.json({
+            success: 'true',
+            message: 'Cars available for selected dates and locations',
+            data: carsAvailable
+        });
+
     } catch (error) {
         console.log(error)
         return res.status(error.status || 500).json({error: error.message || 'Internal Server Error'})
@@ -220,3 +235,4 @@ export const deleteCar = async (req, res, next) => {
         res.status(error.statusCode || 500).json({success:"false", error:error.message || "Internal server error"});
     }
 }
+
