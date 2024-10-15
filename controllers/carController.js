@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import Car from "../models/carModel.js";
 import { cloudinaryInstance } from "../config/cloudinary.js";
 import Dealer from "../models/dealerModel.js";
+import Booking from "../models/bookingModel.js";
+import dayjs from "dayjs";
 
 export const createCar = async (req,res,next)=> {
         try {
@@ -86,22 +88,47 @@ export const createCar = async (req,res,next)=> {
       
 export const getAllCars = async (req,res,next)=>{
     try {
-        const { startdate, enddate, pickuplocation, dropofflocation } = req.body;
-        const carsAvailable = await Car.find({carstatus: 'approved', pickuplocation: 'pickuplocation', dropofflocation: 'dropofflocation'});
+        const { startdate, enddate, pickuplocation, dropofflocation, name, model, fueltype, transmissiontype, seatcapacity } = req.body;
+        
 
         if (!startdate || !enddate || !pickuplocation || !dropofflocation) {
             return res.status(400).json({ error: 'All fields are required' });
         }
-
-        const homedelivery = 0;
-        let deliveryCharge = 0;  
-        if (pickuplocation == 'homedelivery' || dropofflocation == 'homedelivery') {
-            deliveryCharge = 300; 
+        
+        const startTime = dayjs(startdate);
+        const endTime = dayjs(enddate);
+        const bufferTime = startTime.subtract(3, 'hour');
+        
+        const bookedCars = await Booking.find({
+            carId: { $exists: true }, 
+            startdate: { $lt: endTime },  
+            enddate: { $gt: bufferTime },    
+        }).select('carId');
+        
+        const bookedCarIds = bookedCars.map(booking => booking.carId);
+        
+        console.log('Booked Car IDs:', bookedCarIds);
+        
+        const carsAvailable = await Car.find({
+            carstatus: 'approved',
+            ...(name ? { name } : {}),
+            ...(model ? { model } : {}),
+            ...(fueltype ? { fueltype } : {}),
+            ...(transmissiontype ? { transmissiontype } : {}),
+            ...(seatcapacity ? { seatcapacity } : {}),
+            _id: { $nin: bookedCarIds } 
+        });
+        
+    
+        console.log('Available Cars Count:', carsAvailable.length);
+        
+        if (carsAvailable.length === 0) {
+            return res.status(404).json({ message: 'No cars found with the specified filters and availability' });
         }
-
+        
         return res.json({
             success: 'true',
-            message: 'Cars available for selected dates and locations',
+            message: 'Cars available for the selected dates and locations',
             data: carsAvailable
         });
 

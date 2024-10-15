@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 
 const bookingSchema = new mongoose.Schema({
-
     startdate: {
         type: Date,
         required: true
@@ -18,7 +17,7 @@ const bookingSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    totalcost: {
+    rentalcharge: {
         type: Number,
         required: true
     },
@@ -46,9 +45,33 @@ const bookingSchema = new mongoose.Schema({
         ref: 'Car',
         required: true
     },
+    carname: {
+        type: String,
+        required: true
+    },
+    carnumber: {
+        type: String,
+        required: true
+    },
+    carbaserent: {
+        type: Number,
+        required: true
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
+        required: true
+    },
+    username: {
+        type: String,
+        required: true
+    },
+    userphone: {
+        type: String,
+        required: true
+    },
+    useremail: {
+        type: String,
         required: true
     },
 }, {timestamps: true});
