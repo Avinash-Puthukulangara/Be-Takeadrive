@@ -36,10 +36,6 @@ const bookingSchema = new mongoose.Schema({
         enum: [75,100,170,250,320,400,500,650],
         default: 75
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
     carId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Car',

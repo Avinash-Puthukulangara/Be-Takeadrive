@@ -3,6 +3,12 @@ import Booking from '../models/bookingModel.js';
 import Car from '../models/carModel.js';
 import User  from '../models/userModel.js'
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js'
+import timezone from 'dayjs/plugin/timezone.js'
+import customParseFormat from 'dayjs/plugin/customParseFormat.js';
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(customParseFormat);
 
 export const bookingCar = async (req, res, next) => {
     try {
@@ -125,7 +131,52 @@ export const bookingCar = async (req, res, next) => {
         console.log(error);
         return res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
-};
+}
+
+export const getBookings = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const bookings = await Booking.find({ userId: userId });
+
+        console.log(bookings)
+
+        if(!userId){
+            return res.status(404).json({ message: 'User not authorised to access' });
+        }
+
+        if(!bookings){
+            return res.status(404).json({ message: 'No bookings found for this user' });
+        }
+
+
+        return res.status(200).json({success: "true", message: "All bookings",
+            bookingData: bookings.map(booking => {
+                const startDate = dayjs.utc(booking.startdate).tz('Asia/Kolkata').format('DD-MMM-YYYY hh:mm A');
+                const endDate = dayjs.utc(booking.enddate).tz('Asia/Kolkata').format('DD-MMM-YYYY hh:mm A');
+                
+                return {
+                    bookingId: booking._id,
+                    carName: booking.carname,
+                    startDate: startDate,
+                    endDate: endDate,
+                    rentalCharge: booking.rentalcharge
+                }
+            })
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
+}
+
+export const cancelBooking = async (req,res,next) => {
+    try {
+        
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
+}
 
 
 
