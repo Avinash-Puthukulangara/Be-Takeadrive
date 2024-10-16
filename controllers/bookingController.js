@@ -102,7 +102,6 @@ export const cancelBooking = async (req,res,next) => {
         const isAdmin = req.user.role === 'admin'; 
         
         const booking = await Booking.findById(bookingId);
-        console.log(booking)
 
         if (!booking) {
             return res.status(404).json({ message: 'Booking not found' });
@@ -118,7 +117,6 @@ export const cancelBooking = async (req,res,next) => {
 
         booking.bookingstatus = 'cancelled'; 
         await Booking.findByIdAndDelete(bookingId);
-        // await booking.save();
 
         return res.status(200).json({ success:"true",message: 'Booking canceled successfully' });
     } catch (error) {

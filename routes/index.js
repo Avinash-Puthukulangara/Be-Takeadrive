@@ -5,12 +5,15 @@ import { dealerRouter } from "./dealerRoute.js";
 import { carRouter } from "./carRoute.js";
 import { adminRouter } from "./adminRoute.js";
 import { bookingRouter } from "./bookingRoute.js";
+import { reviewRouter } from "./reviewRoute.js";
 
 router.use('/user', userRouter)
 router.use('/dealer', dealerRouter)
 router.use('/car', carRouter)
 
 router.use('/bookings', bookingRouter)
+
+router.use('/review', reviewRouter)
 
 router.use('/admin', adminRouter)
 
