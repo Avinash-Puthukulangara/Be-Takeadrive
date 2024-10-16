@@ -136,9 +136,7 @@ export const bookingCar = async (req, res, next) => {
 export const getBookings = async (req, res, next) => {
     try {
         const userId = req.user.id;
-        const bookings = await Booking.find({ userId: userId });
-
-        console.log(bookings)
+        const bookings = await Booking.find({ userId: userId,bookingstatus: { $in: ['pending', 'confirmed']} });
 
         if(!userId){
             return res.status(404).json({ message: 'User not authorised to access' });
@@ -171,7 +169,28 @@ export const getBookings = async (req, res, next) => {
 
 export const cancelBooking = async (req,res,next) => {
     try {
+        const bookingId = req.params.bookingId;
+        const userId = req.user.id;  
+        const isAdmin = req.user.role === 'admin'; 
         
+        const booking = await Booking.findById(bookingId);
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        if (booking.bookingstatus === 'cancelled') {
+            return res.status(400).json({ message: 'Booking is already cancelled' });
+        }
+
+        if (booking.userId.toString() !== userId && !isAdmin) {
+            return res.status(403).json({ message: 'You are not authorized to cancel this booking' });
+        }
+
+        booking.bookingstatus = 'cancelled'; 
+        await booking.save();
+
+        return res.status(200).json({ success:"true",message: 'Booking canceled successfully' });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ error: error.message || 'Internal Server Error' });
@@ -179,4 +198,39 @@ export const cancelBooking = async (req,res,next) => {
 }
 
 
+export const allBookings = async (req,res,next) => {
+    try {
+        const isAdmin = req.user.role === 'admin';
+        const bookings = await Booking.find({ bookingstatus: 'confirmed'})
+
+        if (!isAdmin) {
+            return res.status(403).json({ message: 'You are not authorized to view all bookings' });
+        }
+
+        if(!bookings){
+            return res.status(404).json({ message: 'No bookings found' });
+        }
+
+
+
+        return res.status(200).json({ success: "true", message: "All bookings",
+            bookingData: bookings.map(booking => {
+                const startDate = dayjs.utc(booking.startdate).tz('Asia/Kolkata').format('DD-MMM-YYYY hh:mm A');
+                const endDate = dayjs.utc(booking.enddate).tz('Asia/Kolkata').format('DD-MMM-YYYY hh:mm A');
+                
+                return {
+                    bookingId: booking._id,
+                    carName: booking.carname,
+                    startDate: startDate,
+                    endDate: endDate,
+                    rentalCharge: booking.rentalcharge,
+                    bookingstatus: booking.bookingstatus
+                }
+            })
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
+}
 

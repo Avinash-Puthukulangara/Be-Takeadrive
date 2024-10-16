@@ -175,12 +175,18 @@ export const logoutDealer = async (req,res,next)=>{
 
 export const deleteDealer = async (req,res,next)=>{
     try {
-        const {dealerId} = req.params
+        const {dealerId} = req.params;
+        const isAdmin = req.user.role === 'admin';
         const dealerExist = await Dealer.findById(dealerId);
 
         if(!dealerExist){
             return res.status(404).json({message:"Dealer not found"})
         }
+        if (!isAdmin && dealerExist.role === 'dealer') {
+            return res.status(403).json({ message: 'Unauthorized access' });
+        }
+
+
         await Dealer.findByIdAndDelete(dealerId)
 
         if (dealerExist.dealerpicPublicId) {
@@ -200,8 +206,27 @@ export const deleteDealer = async (req,res,next)=>{
 //admin controls//
 export const getallDealers = async (req, res, next)=>{
     try {
+        const isAdmin = req.user.role === 'admin';
         const allDealers = await Dealer.find({role : 'dealer'}).select('-password')
-        return res.status(200).json({success:"true", message:"Fetched all dealers" , data: allDealers})
+
+        if (!isAdmin) {
+            return res.status(403).json({ message: 'Unauthorized access' });
+        }
+
+        return res.status(200).json({success:"true", message:"Fetched all dealers" , 
+            allDealersdata: allDealers.map(dealer => {
+                return {
+                    dealerId: dealer._id,
+                    name: dealer.name,
+                    email: dealer.email,
+                    phone: dealer.phone,
+                    dealerpic: dealer.dealerpic,
+                    carsId: dealer.cars,
+                    carsanction: dealer.carsanction,
+                    carstockes: dealer.carstock
+                }
+            })
+        })
     } catch (error) {
         console.log(error)
         res.status(error.status || 500).json({success:"false",error: error.message || 'Internal Server Error'})

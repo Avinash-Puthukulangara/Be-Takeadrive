@@ -206,8 +206,27 @@ export const deleteUser = async (req,res,next)=>{
 //admin controls//
 export const getallUsers = async (req, res, next)=>{
     try {
-        const allUsers = await User.find().select('-password')
-        return res.status(200).json({success:"true", message:"Fetched all Users" , data: allUsers})
+        const isAdmin = req.user.role === 'admin';
+        const allUsers = await User.find();
+
+        if (!isAdmin) {
+            return res.status(403).json({ message: "Unauthorized Access" });
+        }
+        if (allUsers.length === 0) {
+            return res.status(404).json({ message: "No users found" });
+        }
+        return res.status(200).json({success:"true", message:"Fetched all Users" , 
+            allUsersdata: allUsers.map(user => {
+                return {
+                    userId: user._id,
+                    username: user.name,
+                    useremail: user.email,
+                    userphone: user.phone,
+                    licensefront: user.lcfrontpic,
+                    licenseback: user.lcbackpic
+                }
+            })
+        })
 
     } catch (error) {
 

@@ -88,7 +88,7 @@ export const createCar = async (req,res,next)=> {
       
 export const getAllCars = async (req,res,next)=>{
     try {
-        const { startdate, enddate, pickuplocation, dropofflocation, name, model, fueltype, transmissiontype, seatcapacity } = req.body;
+        const { startdate, enddate, pickuplocation, dropofflocation, name, model, fueltype, transmissiontype, seatcapacity, selectedrange } = req.body;
 
         if (!startdate || !enddate || !pickuplocation || !dropofflocation) {
             return res.status(400).json({ error: 'All fields are required' });
@@ -97,6 +97,7 @@ export const getAllCars = async (req,res,next)=>{
         const startTime = dayjs(startdate);
         const endTime = dayjs(enddate);
         const bufferTime = startTime.subtract(3, 'hour');
+        const durationInHours = endTime.diff(startTime, 'hour', true); 
         
         const bookedCars = await Booking.find({
             carId: { $exists: true }, 
@@ -105,8 +106,6 @@ export const getAllCars = async (req,res,next)=>{
         }).select('carId');
         
         const bookedCarIds = bookedCars.map(booking => booking.carId);
-        
-        console.log('Booked Car IDs:', bookedCarIds);
         
         const carsAvailable = await Car.find({
             carstatus: 'approved',
@@ -118,17 +117,60 @@ export const getAllCars = async (req,res,next)=>{
             _id: { $nin: bookedCarIds } 
         });
         
-    
         console.log('Available Cars Count:', carsAvailable.length);
         
         if (carsAvailable.length === 0) {
             return res.status(404).json({ message: 'No cars found with the specified filters and availability' });
         }
+
+        let timeRange = 0;
+        if (durationInHours > 8) {
+            timeRange = (durationInHours - 8) * 15; 
+        }
+
+        let deliveryCharge = 0;
+        if (pickuplocation === 'homedelivery' || dropofflocation === 'homedelivery') {
+            deliveryCharge = 300; 
+        }
+
+        const rangePresets = [
+            { maxRange: 100, rangeValue: 1.2 },
+            { maxRange: 170, rangeValue: 1.5 },
+            { maxRange: 250, rangeValue: 2.0 },
+            { maxRange: 320, rangeValue: 2.5 },
+            { maxRange: 400, rangeValue: 3.0 },
+            { maxRange: 500, rangeValue: 3.5 },
+            { maxRange: 650, rangeValue: 4.0 },
+        ];
         
+        const rangeAmount = (selectedrange) => {
+            const presetvalue = rangePresets.find(preset => selectedrange <= preset.maxRange);
+            return presetvalue ? presetvalue.rangeValue : 1;
+        };
+        
+        const rangeAmountcalculated = rangeAmount(selectedrange);
+
         return res.json({
             success: 'true',
             message: 'Cars available for the selected dates and locations',
-            data: carsAvailable
+            allCarsdata: carsAvailable.map(car => {
+                const rentCost = rangeAmountcalculated * car.rent;
+                const totalcost = Math.round(rentCost + timeRange + deliveryCharge);
+                return {
+                    _id: car._id,
+                    name: car.name,
+                    model: car.model,
+                    carnumber: car.carnumber,
+                    fueltype: car.fueltype,
+                    transmissiontype: car.transmissiontype,
+                    seatcapacity: car.seatcapacity,
+                    rent: car.rent,
+                    carpic: car.carpic,
+                    dealer: car.dealer,
+                    rentalcharge: totalcost
+
+                }
+            })
         });
 
     } catch (error) {
