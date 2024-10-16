@@ -49,6 +49,18 @@ const carSchema = new mongoose.Schema({
         enum: [ 'approved', 'pending', 'rejected'],
         default: 'pending'
     },
+    totalratings: {
+        type: Number,
+        default: 0,
+    },
+    overallratings: {
+        type: Number,
+        default: 0,
+    },
+    averagerating: {
+        type: Number,
+        default: 0,
+    },
     dealer: {type: mongoose.Types.ObjectId, ref:"Dealer"},
 },
     { timestamps:true }

@@ -13,10 +13,15 @@ dayjs.extend(customParseFormat);
 export const bookingCar = async (req, res, next) => {
     try {
         const { carId, startdate, enddate, pickuplocation, dropofflocation, selectedrange, rentalcharge } = req.body;
+
+        console.log(startdate)
         
         if (!carId || !startdate || !enddate || !pickuplocation || !dropofflocation || !selectedrange || !rentalcharge) {
             return res.status(400).json({ error: 'All booking fields are required' });
         }
+
+        const startTime = dayjs(startdate);
+        const endTime = dayjs(enddate);
     
         const userId = req.user.id;
         const user = await User.findById(userId);
@@ -28,6 +33,42 @@ export const bookingCar = async (req, res, next) => {
         const car = await Car.findById(carId);
         if (!car) {
             return res.status(404).json({ error: 'Car not found' });
+        }
+
+        const alreadyBooked = await Booking.findOne({
+            carId: carId,
+            userId: userId,
+            startdate: startTime.toISOString(),
+            enddate: endTime.toISOString(),
+            bookingstatus: { $ne: 'cancelled'}
+        })
+
+        if (alreadyBooked) {
+            return res.status(400).json({ success:"false",message: 'Car is already booked for this time period' });
+        }
+
+        const reBooking = await Booking.findOne({
+            userId: userId,
+            bookingstatus: { $ne: 'cancelled' },
+            $or: [
+                { 
+                  startdate:{$lt: startTime.toISOString()},
+                  enddate:{$gt: endTime.toISOString()},  
+                }, 
+                {
+                    startdate: {
+                        $gte: dayjs(startTime).startOf('day').toISOString(),
+                        $lt: dayjs(startTime).endOf('day').toISOString()
+                    },
+                    enddate: {
+                        $gt: dayjs(endTime).startOf('day').toISOString(),
+                        $lte: dayjs(endTime).endOf('day').toISOString()
+                    }
+                }
+            ]
+        });
+        if (reBooking) {
+            return res.status(400).json({ success:"false",message: 'You already have a booking'});
         }
         
         const booking = new Booking({
@@ -51,8 +92,7 @@ export const bookingCar = async (req, res, next) => {
         
         return res.status(201).json({
             success: true,
-            message: 'Car booked successfully',
-            data: bookedData
+            message: 'Car booked successfully'
         });
         
     } catch (error) {

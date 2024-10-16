@@ -68,7 +68,7 @@ export const createCar = async (req,res,next)=> {
 
           dealer.carstock += 1
 
-          if(dealer.carstock >= 2){
+          if(dealer.carstock >= 3){
             dealer.carsanction = true
           }
 
@@ -93,9 +93,9 @@ export const getAllCars = async (req,res,next)=>{
         if (!startdate || !enddate || !pickuplocation || !dropofflocation) {
             return res.status(400).json({ error: 'All fields are required' });
         }
-        
+
         const startTime = dayjs(startdate);
-        const endTime = dayjs(enddate);
+        const endTime = dayjs(enddate)
         const bufferTime = startTime.subtract(3, 'hour');
         const durationInHours = endTime.diff(startTime, 'hour', true); 
         
