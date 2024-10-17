@@ -14,7 +14,7 @@ router.get('/dealerreviews', authDealer, dealerGetreviews)
 
 
 //admin controls //
-router.get('/allreviews', authAdmin, allReviews)
+router.get('/allreviews/:carId', authAdmin, allReviews)
 
 
 

@@ -86,7 +86,7 @@ export const createCar = async (req,res,next)=> {
         }
 }
       
-export const getAllCars = async (req,res,next)=>{
+export const getAvailablecars = async (req,res,next)=>{
     try {
         const { startdate, enddate, pickuplocation, dropofflocation, name, model, fueltype, transmissiontype, seatcapacity, selectedrange } = req.body;
 
@@ -304,3 +304,26 @@ export const deleteCar = async (req, res, next) => {
     }
 }
 
+
+
+// for dealer-admin //
+export const getAllapprovedcars = async (req,res,next) => {
+    try {
+        const role = req.user.role;
+        const dealerId = req.user.id;
+
+        if(role === "admin"){
+            const adminApprovedCars = await Car.find({ carstatus: "approved"})
+            return res.status(200).json({success:"true", message:"Fetched all approved cars", approvedCars: adminApprovedCars})
+        }else if(role === "dealer"){
+            const dealerApprovedCars = await Car.find({ dealer: dealerId ,carstatus: "approved"})
+            return res.status(200).json({success:"true", message:"Fetched all approved cars", approvedCars:dealerApprovedCars})
+        }else {
+            return res.status(401).json({success:"false", message:"Unauthorized access"})
+        }
+
+    } catch (error) {
+        console.log(error);
+        res.status(error.statusCode || 500).json({success:"false", error:error.message || "Internal server error"});
+    }
+}

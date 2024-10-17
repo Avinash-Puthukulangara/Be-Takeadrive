@@ -101,13 +101,11 @@ export const deleteReview = async (req,res,next) => {
 export const dealerGetreviews = async (req,res,next) => {
     try {
         const dealerId = req.user.id;
-        console.log(dealerId)
         if(req.user.role !== 'dealer'){
             return res.status(403).json({ success: "false", message: 'You are not authorized to view reviews.'});
         }
-
-        const dealerCars = await Car.find({ dealerId: dealerId }).select('_id')
         
+        const dealerCars = await Car.find({ dealer: dealerId}).select('_id');
 
         if(dealerCars.length === 0) {
             return res.status(200).json({ success: "false", message: 'No cars were found'});
@@ -135,7 +133,18 @@ export const allReviews = async (req,res,next) => {
             return res.status(403).json({ success: false, message: 'You are not authorized to view all reviews.' });
         }
 
-        const reviews = await Review.find()
+        const carId = req.params.carId;
+        console.log(carId)
+
+        if(!carId){
+            return res.status(400).json({ success: false, message: 'carId parameter is required to view reviews.' });
+        }
+
+        const reviews = await Review.find({carId})
+
+        if (reviews.length === 0) {
+            return res.status(404).json({ success: false, message: "No reviews found for this car" });
+        }
 
         return res.status(200).json({ success: "true", message: 'All reviews fetched successfully', data: reviews });
     } catch (error) {
