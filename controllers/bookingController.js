@@ -13,8 +13,6 @@ dayjs.extend(customParseFormat);
 export const bookingCar = async (req, res, next) => {
     try {
         const { carId, startdate, enddate, pickuplocation, dropofflocation, selectedrange, rentalcharge } = req.body;
-
-        console.log(startdate)
         
         if (!carId || !startdate || !enddate || !pickuplocation || !dropofflocation || !selectedrange || !rentalcharge) {
             return res.status(400).json({ error: 'All booking fields are required' });
@@ -22,6 +20,9 @@ export const bookingCar = async (req, res, next) => {
 
         const startTime = dayjs(startdate);
         const endTime = dayjs(enddate);
+
+        const localstartdate = dayjs.utc(startdate).tz('Asia/Kolkata').format('DD-MMM-YYYY hh:mm A');
+        const localenddate = dayjs.utc(enddate).tz('Asia/Kolkata').format('DD-MMM-YYYY hh:mm A');
     
         const userId = req.user.id;
         const user = await User.findById(userId);
@@ -82,14 +83,16 @@ export const bookingCar = async (req, res, next) => {
             carbaserent: car.rent,
             startdate,
             enddate,
+            localstartdate: localstartdate,
+            localenddate: localenddate,
             pickuplocation,
             dropofflocation,
             selectedrange,
             rentalcharge 
         });
         
-        const bookedData = await booking.save();
-        
+        await booking.save();
+
         return res.status(201).json({
             success: true,
             message: 'Car booked successfully'
@@ -175,22 +178,17 @@ export const allBookings = async (req,res,next) => {
             return res.status(403).json({ message: 'You are not authorized to view all bookings' });
         }
 
-        if(!bookings){
+        if(!bookings || bookings.length === 0) {
             return res.status(404).json({ message: 'No bookings found' });
         }
 
-
-
         return res.status(200).json({ success: "true", message: "All bookings",
-            bookingData: bookings.map(booking => {
-                const startDate = dayjs.utc(booking.startdate).tz('Asia/Kolkata').format('DD-MMM-YYYY hh:mm A');
-                const endDate = dayjs.utc(booking.enddate).tz('Asia/Kolkata').format('DD-MMM-YYYY hh:mm A');
-                
+            bookingData: bookings.map(booking => {  
                 return {
                     bookingId: booking._id,
                     carName: booking.carname,
-                    startDate: startDate,
-                    endDate: endDate,
+                    startDate: booking.localstartdate,
+                    endDate: booking.localenddate,
                     rentalCharge: booking.rentalcharge,
                     bookingstatus: booking.bookingstatus
                 }
@@ -202,3 +200,29 @@ export const allBookings = async (req,res,next) => {
     }
 }
 
+export const bookingRevenue = async (req,res,next) => {
+    try {
+        const isAdmin = req.user.role === 'admin';
+
+        if (!isAdmin) {
+            return res.status(403).json({ message: 'You are not authorized to view revenue data.' });
+        }
+
+        const bookings = await Booking.find({
+            bookingstatus: 'confirmed',
+            paymentstatus: 'confirmed'
+        });
+        console.log(bookings)
+    
+        const totalRevenue = bookings.reduce((total, booking) => total + booking.rentalcharge, 0);
+    
+        return res.status(200).json({
+            success: true,
+            message: 'Total revenue calculated successfully',
+            totalRevenue: totalRevenue
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
+}

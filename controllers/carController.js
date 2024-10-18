@@ -88,7 +88,7 @@ export const createCar = async (req,res,next)=> {
       
 export const getAvailablecars = async (req,res,next)=>{
     try {
-        const { startdate, enddate, pickuplocation, dropofflocation, name, model, fueltype, transmissiontype, seatcapacity, selectedrange } = req.body;
+        const { startdate, enddate, pickuplocation, dropofflocation, name, model, fueltype, transmissiontype, seatcapacity, selectedrange} = req.body;
 
         if (!startdate || !enddate || !pickuplocation || !dropofflocation) {
             return res.status(400).json({ error: 'All fields are required' });

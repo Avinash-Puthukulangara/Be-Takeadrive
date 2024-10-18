@@ -70,6 +70,14 @@ const bookingSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    localstartdate: {
+        type: String,
+        required: true
+    },
+    localenddate: {
+        type: String,
+        required: true
+    },
 }, {timestamps: true});
 
 const Booking = mongoose.model('Booking', bookingSchema);

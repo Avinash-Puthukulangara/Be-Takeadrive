@@ -3,6 +3,7 @@ import { authAdmin } from '../middlewares/authenticateAdmin.js';
 import { carApproval, carPending, carRejection, loginAdmin, logoutAdmin } from '../controllers/adminController.js';
 import { getallDealers } from '../controllers/dealerController.js';
 import { getallUsers } from '../controllers/userController.js';
+
 const router = express.Router();
 
 //admin based//
