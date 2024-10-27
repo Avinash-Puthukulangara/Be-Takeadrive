@@ -9,7 +9,7 @@ const PORT = 3003;
 connectDb();
 
 app.use(cors({
-    origin:["http://localhost:5173","https://uiclient-takeadrive.vercel.app"],
+    origin:["http://localhost:5173","https://uiclient-takeadrive-pouszxtuk-avinash-ps-projects.vercel.app"],
     credentials:true,
     methods:['GET', 'POST', 'PUT', 'DELETE']
 }));
