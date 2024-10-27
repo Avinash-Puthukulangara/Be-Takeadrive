@@ -202,6 +202,17 @@ export const deleteUser = async (req,res,next)=>{
     }
 }
 
+export const checkUser = async (req,res,next) => {
+    try {
+        
+        res.json({  success: "true" ,message: "Authenticated User"});
+    
+    } catch (error) {
+        console.log(error)
+        res.status(error.status || 500).json({success:"false",error: error.message || 'Internal Server Error'})
+    }
+}
+
 
 //admin controls//
 export const getallUsers = async (req, res, next)=>{
