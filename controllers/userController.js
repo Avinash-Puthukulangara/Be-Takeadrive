@@ -56,7 +56,11 @@ export const signupUser = async (req,res,next)=>{
         if(savedUser){
             const token = await generateToken(savedUser._id)
 
-            res.cookie("token",token)
+            res.cookie("token",token ,{
+                sameSite:"None",
+                secure:true,
+                httpOnly:true
+            })
             return res.status(200).json({success:"true",message: "User Signed up successfully"})
         }
         return res.status(400).json({success:"false",error: "Error in User Saving"})
@@ -87,7 +91,11 @@ export const loginUser = async (req,res,next)=>{
 
         const token = generateToken(userExist._id)
 
-        res.cookie("token", token)
+        res.cookie("token", token, {
+            sameSite:"None",
+            secure:true,
+            httpOnly:true
+        })
         return res.status(200).json({success:"true",message:"User logged in Successfully"})
 
     } catch (error) {
