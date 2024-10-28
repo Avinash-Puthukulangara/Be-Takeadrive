@@ -13,7 +13,8 @@ app.use(cors({
     origin: [
         "http://localhost:5173",
         "https://uiclient-takeadrive-9w6ms5j5z-avinash-ps-projects.vercel.app",
-        "https://u-takeadrive.vercel.app"
+        "https://u-takeadrive.vercel.app",
+        "https://takeadrive-user.netlify.app"
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE']
