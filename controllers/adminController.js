@@ -53,12 +53,21 @@ export const loginAdmin = async (req,res,next)=>{
         
     }
 }
-
 export const logoutAdmin = async (req,res,next)=>{
     try {
         
         res.clearCookie('token')
         res.status(200).json({success:"true",message:"Admin logged out Successfully"})
+    } catch (error) {
+        console.log(error)
+        res.status(error.status || 500).json({success:"false",error: error.message || 'Internal Server Error'})
+    }
+}
+export const checkAdmin = async (req,res,next)=>{
+    try {    
+        const {user} = req
+        const adminData = await Dealer.findById(user.id).select('-password');
+        res.json({  success: "true" ,message: "Admin Authenticated", adminData}); 
     } catch (error) {
         console.log(error)
         res.status(error.status || 500).json({success:"false",error: error.message || 'Internal Server Error'})

@@ -129,7 +129,7 @@ export const getAvailablecars = async (req,res,next)=>{
         }
 
         let deliveryCharge = 0;
-        if (pickuplocation === 'homedelivery' || dropofflocation === 'homedelivery') {
+        if (pickuplocation === "Home Delivery" || dropofflocation === 'Home Delivery') {
             deliveryCharge = 300; 
         }
 
@@ -150,46 +150,54 @@ export const getAvailablecars = async (req,res,next)=>{
         
         const rangeAmountcalculated = rangeAmount(selectedrange);
 
+        const allCarsData = await Promise.all(carsAvailable.map(async (car) => {
+            const rentCost = rangeAmountcalculated * car.rent;
+            const totalcost = Math.round(rentCost + timeRange + deliveryCharge);
+
+            await Car.findByIdAndUpdate(car._id, { rentalcharge: totalcost });
+
+            return {
+                _id: car._id,
+                name: car.name,
+                model: car.model,
+                carnumber: car.carnumber,
+                fueltype: car.fueltype,
+                transmissiontype: car.transmissiontype,
+                seatcapacity: car.seatcapacity,
+                rent: car.rent,
+                carpic: car.carpic,
+                dealer: car.dealer,
+                rentalcharge: totalcost,
+            };
+        }));
+
         return res.json({
             success: 'true',
             message: 'Cars available for the selected dates and locations',
-            allCarsdata: carsAvailable.map(car => {
-                const rentCost = rangeAmountcalculated * car.rent;
-                const totalcost = Math.round(rentCost + timeRange + deliveryCharge);
-                return {
-                    _id: car._id,
-                    name: car.name,
-                    model: car.model,
-                    carnumber: car.carnumber,
-                    fueltype: car.fueltype,
-                    transmissiontype: car.transmissiontype,
-                    seatcapacity: car.seatcapacity,
-                    rent: car.rent,
-                    carpic: car.carpic,
-                    dealer: car.dealer,
-                    rentalcharge: totalcost
-
-                }
-            })
+            allCarsdata: allCarsData,
         });
 
     } catch (error) {
-        console.log(error)
-        return res.status(error.status || 500).json({error: error.message || 'Internal Server Error'})
+        console.log(error);
+        return res.status(error.status || 500).json({ error: error.message || 'Internal Server Error' });
     }
 }
 
 export const fetchCardetails = async (req, res, next) => {
     try {
         const { carId } = req.params;
-
-        const carDetails = await Car.findOne({_id:carId});
-
-        return res.json({ success:"true",message: "Car details fetched", data: carDetails });
-    } catch (error) {
+    
+        const carDetails = await Car.findById(carId);
+    
+        if (!carDetails) {
+          return res.status(404).json({ success: "false", message: "Car not found." });
+        }
+    
+        return res.json({ success: "true", message: "Car details fetched", data: carDetails });
+      } catch (error) {
         console.log(error);
-        return res.status(error.statusCode || 500).json({success:"false",error: error.message || "Internal server error"});
-    }
+        return res.status(error.statusCode || 500).json({ success: "false", error: error.message || "Internal server error" });
+      }
 }
 
 export const updateCar = async (req, res, next) => {

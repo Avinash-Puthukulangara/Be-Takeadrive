@@ -92,9 +92,10 @@ export const loginUser = async (req,res,next)=>{
         const token = generateToken(userExist._id)
 
         res.cookie("token", token, {
-            sameSite:"None",
-            secure:true,
-            httpOnly:true
+            maxAge: 1 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+            sameSite: "none", 
+            secure: true,
         })
         return res.status(200).json({success:"true",message:"User logged in Successfully"})
 

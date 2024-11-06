@@ -91,7 +91,12 @@ export const loginDealer = async (req,res,next)=>{
         }
 
         const token = adminToken(dealerExist._id,'dealer')
-        res.cookie("token", token)
+        res.cookie("token", token, {
+            maxAge: 1 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+            sameSite: "none", 
+            secure: true,
+        })
 
         return res.status(200).json({success:"true",message:"Dealer logged in Successfully"})
 
@@ -202,6 +207,17 @@ export const deleteDealer = async (req,res,next)=>{
     }
 }
 
+export const checkDealer = async (req, res, next)=>{
+    try {  
+        const {user} = req
+        const dealerData = await Dealer.findById(user.id).select('-password');
+
+        res.json({  success: "true" ,message: "Authenticated Dealer", dealerData});
+    } catch (error) {
+        console.log(error)
+        res.status(error.status || 500).json({success:"false",error: error.message || 'Internal Server Error'})
+    }
+}
 
 //admin controls//
 export const getallDealers = async (req, res, next)=>{

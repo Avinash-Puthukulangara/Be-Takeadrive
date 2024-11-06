@@ -44,6 +44,10 @@ const carSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    rentalcharge: { 
+        type: Number,
+        default: 0,
+    },
     carstatus: {
         type: String,
         enum: [ 'approved', 'pending', 'rejected'],
