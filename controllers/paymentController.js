@@ -4,10 +4,14 @@ import Booking from "../models/bookingModel.js";
 import Car from "../models/carModel.js";
 import User from "../models/userModel.js";
 const stripe = new Stripe(process.env.Stripe_Private_Api_Key);
-const client_domain = process.env.CLIENT_DOMAIN;
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
+const client_domain =
+  process.env.NODE_ENV === 'production'
+    ? process.env.CLIENT_DOMAIN
+    : 'http://localhost:5173';
+    console.log(client_domain,"client_domain")
 
 export const createPayment = async (req, res, next) => {
     try {
