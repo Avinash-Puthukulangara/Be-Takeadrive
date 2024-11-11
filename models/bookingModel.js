@@ -1,22 +1,22 @@
 import mongoose from 'mongoose';
 
 const bookingSchema = new mongoose.Schema({
-    startdate: {
-        type: Date,
-        required: true
-    },
-    enddate: {
-        type: Date,
-        required: true
-    },
-    pickuplocation: {
-        type: String,
-        required: true
-    },
-    dropofflocation: {
-        type: String,
-        required: true
-    },
+    // startdate: {
+    //     type: Date,
+    //     required: true
+    // },
+    // enddate: {
+    //     type: Date,
+    //     required: true
+    // },
+    // pickuplocation: {
+    //     type: String,
+    //     required: true
+    // },
+    // dropofflocation: {
+    //     type: String,
+    //     required: true
+    // },
     rentalcharge: {
         type: Number,
         required: true
@@ -31,11 +31,11 @@ const bookingSchema = new mongoose.Schema({
         enum: ['pending', 'paid'],
         default: 'pending'
     },
-    selectedrange: {
-        type: String,
-        enum: [75,100,170,250,320,400,500,650],
-        default: 75
-    },
+    // selectedrange: {
+    //     type: String,
+    //     enum: [75,100,170,250,320,400,500,650],
+    //     default: 75
+    // },
     carId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Car',
@@ -70,14 +70,14 @@ const bookingSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    localstartdate: {
-        type: String,
-        required: true
-    },
-    localenddate: {
-        type: String,
-        required: true
-    },
+    // localstartdate: {
+    //     type: String,
+    //     required: true
+    // },
+    // localenddate: {
+    //     type: String,
+    //     required: true
+    // },
 }, {timestamps: true});
 
 const Booking = mongoose.model('Booking', bookingSchema);

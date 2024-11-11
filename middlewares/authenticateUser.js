@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 export const authUser = async (req,res,next)=>{
     try {
         const { token } = req.cookies
+        console.log("Cookies:", req.cookies);
         if(!token){
             return res.status(402).json({message:"User not authorised"})
         }

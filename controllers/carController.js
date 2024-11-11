@@ -90,9 +90,9 @@ export const getAvailablecars = async (req,res,next)=>{
     try {
         const { startdate, enddate, pickuplocation, dropofflocation, name, model, fueltype, transmissiontype, seatcapacity, selectedrange} = req.body;
 
-        if (!startdate || !enddate || !pickuplocation || !dropofflocation) {
-            return res.status(400).json({ error: 'All fields are required' });
-        }
+        // if (!startdate || !enddate || !pickuplocation || !dropofflocation) {
+        //     return res.status(400).json({ error: 'All fields are required' });
+        // }
 
         const startTime = dayjs(startdate);
         const endTime = dayjs(enddate)

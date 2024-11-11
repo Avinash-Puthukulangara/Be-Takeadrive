@@ -14,7 +14,7 @@ export const bookingCar = async (req, res, next) => {
     try {
         const { carId, startdate, enddate, pickuplocation, dropofflocation, selectedrange, rentalcharge } = req.body;
         
-        if (!carId || !startdate || !enddate || !pickuplocation || !dropofflocation || !selectedrange || !rentalcharge) {
+        if (!carId || !startdate || !enddate || !pickuplocation || !dropofflocation || !rentalcharge) {
             return res.status(400).json({ error: 'All booking fields are required' });
         }
 
@@ -87,7 +87,6 @@ export const bookingCar = async (req, res, next) => {
             localenddate: localenddate,
             pickuplocation,
             dropofflocation,
-            selectedrange,
             rentalcharge 
         });
         

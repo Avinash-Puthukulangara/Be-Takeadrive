@@ -57,8 +57,9 @@ export const signupUser = async (req,res,next)=>{
             const token = await generateToken(savedUser._id)
 
             res.cookie("token",token ,{
+                maxAge: 1 * 24 * 60 * 60 * 1000,
                 sameSite:"None",
-                secure:true,
+                secure: process.env.NODE_ENV === 'production',
                 httpOnly:true
             })
             return res.status(200).json({success:"true",message: "User Signed up successfully"})
@@ -95,9 +96,9 @@ export const loginUser = async (req,res,next)=>{
             maxAge: 1 * 24 * 60 * 60 * 1000,
             httpOnly: true,
             sameSite: "none", 
-            secure: true,
+            secure: process.env.NODE_ENV === 'production',
         })
-        return res.status(200).json({success:"true",message:"User logged in Successfully"})
+        return res.status(200).json({success:"true",message:"User logged in Successfully", token: token})
 
     } catch (error) {
         console.log(error)
